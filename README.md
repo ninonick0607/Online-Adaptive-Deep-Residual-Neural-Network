@@ -45,6 +45,14 @@ This command:
 - Generates output data in the `simulation_data/` directory
 - Creates IEEE-standard plots for result analysis
 
+### Viewing the Results
+
+After the simulation completes and generates data in the `simulation_data/` directory, you can create and display all result plots by running the plotting script:
+
+```bash
+python3 src/visualization/plotter.py
+```
+
 ## High-Level Overview
 
 ### Purpose
