@@ -6,7 +6,7 @@ An implementation of online adaptive deep neural networks with residual connecti
 
 ### Prerequisites
 
-- Python 3.10 or higher
+- Python 3.11 or higher
 - Dependencies listed in `requirements.txt`
 
 ### Installation
@@ -17,21 +17,25 @@ git clone https://github.com/cristian1928/Online-Adaptive-Deep-Residual-Neural-N
 cd Online-Adaptive-Deep-Residual-Neural-Network
 ```
 
-2. Install dependencies:
+2. Create and activate a virtual environment:
 ```bash
-pip install -r requirements.txt
+# Create the environment
+python3 -m venv venv
+
+# Activate on macOS/Linux
+source venv/bin/activate
 ```
 
-3. For development work, install additional dependencies:
+3. Install dependencies:
 ```bash
-pip install -r requirements-dev.txt
+pip install -r requirements.txt -r requirements-dev.txt
 ```
 
 ### How to Run the Program
 
 Execute the main simulation:
 ```bash
-python main.py
+python3 main.py
 ```
 
 This command:
@@ -66,11 +70,24 @@ This framework implements online adaptive control using deep residual neural net
 
 The system uses JSON configuration files in the `configurations/` directory. Each file defines simulation parameters, neural network architecture, and learning parameters for one agent. Multiple configuration files enable batch simulations with different agents.
 
-## Testing
+## Code Quality & Testing
 
-Run the test suite:
+Before committing or pushing changes, it's recommended to run the following checks to ensure code quality and correctness.
+
+### 1. Static Type Checking
+
+Run this after making any changes to function signatures or data types.
+
 ```bash
-python -m pytest tests/
+mypy --strict 
+```
+
+### 2. Testing
+
+This runs the full suite of unit and integration tests.
+
+```bash
+python -m pytest -v tests/
 ```
 
 ## License
