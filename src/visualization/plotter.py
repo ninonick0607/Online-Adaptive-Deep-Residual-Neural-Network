@@ -94,9 +94,9 @@ def plot_from_csv() -> None:
     ax_traj.plot(target_x, target_y, target_z, label='Target Trajectory', linestyle='dotted', color='black', linewidth=2.0)
     ax_traj.set_xlabel('X Position (m)')
     ax_traj.set_ylabel('Y Position (m)')
-    ax_traj.set_zlabel('Z Position (m)')  # type: ignore[attr-defined]
+    ax_traj.set_zlabel('Z Position (m)')
     ax_traj.legend(loc='best', fontsize=12, frameon=True, edgecolor='black')
-    ax_traj.set_box_aspect((1, 1, 1))  # type: ignore[arg-type]
+    ax_traj.set_box_aspect((1, 1, 1))
     plt.tight_layout()
 
     # ─── Neural Network Weights (One Plot Per ID) ───
