@@ -159,7 +159,7 @@ class NeuralNetwork:
             least_square_term = product.T @ product
             forgetting_term = self.alpha * np.size(self.weights) + self.beta*learning_rate - self.gamma* learning_rate @ learning_rate
             result = -least_square_term + forgetting_term
-            return result
+            return 0.5 * (result.T + result)
     
         new_lr = integrate_step(self.learning_rate[step - 1], step, self.time_step_delta, learning_rate_dynamics)
         self.learning_rate[step] = new_lr
