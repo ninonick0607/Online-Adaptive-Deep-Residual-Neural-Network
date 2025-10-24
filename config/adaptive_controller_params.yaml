@@ -1,0 +1,44 @@
+adaptive_resnet_controller:
+  ros__parameters:
+    # Neural Network Architecture
+    resnet:
+      num_blocks: 2
+      num_layers: 3
+      num_neurons: 20
+      input_size: 15  # pos(3) + vel(3) + ref_vel(3) + error(3) + angles(3)
+      output_size: 3  # velocity corrections [vx, vy, vz]
+      inner_activation: "tanh"
+      output_activation: "identity"
+      shortcut_activation: "identity"
+
+    # Learning Parameters
+    learning:
+      initial_rate: 0.001
+      min_singular_value: 0.1
+      max_singular_value: 10.0
+      weight_bounds: 2.0
+      decay_rate: 0.999
+
+    # Control Parameters
+    control:
+      rate_hz: 100.0  # Match your odometry rate
+      max_velocity_correction: 0.5  # m/s - maximum correction magnitude
+      baseline_gain: 1.0  # Gain for baseline controller enhancement
+
+    # Training Control
+    training:
+      enabled_on_start: false  # Start with training disabled for safety
+      warmup_steps: 100  # Number of steps before training begins
+      min_error_threshold: 0.01  # Don't train if error is below this
+      max_error_threshold: 2.0  # Don't train if error exceeds this (safety)
+      learning_decay_rate: 0.999  # Learning rate decay factor
+
+    # Safety Parameters
+    safety:
+      max_output_magnitude: 1.0  # Maximum total correction magnitude (m/s)
+      emergency_stop_error: 5.0  # Stop controller if error exceeds this
+
+    # Diagnostics
+    diagnostics:
+      publish_rate_hz: 10.0
+      log_interval_steps: 100

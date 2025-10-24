@@ -1,112 +1,127 @@
-# Online Adaptive Deep Residual Neural Network
+# Adaptive ResNet Controller for QuadSim
 
-A Python-based implementation of an online adaptive deep neural network with residual connections, designed for modeling and controlling nonlinear dynamical systems. The system simulates autonomous dynamics and performs real-time weight adaptation during operation.
+Online adaptive deep residual neural network for drone velocity control using ROS2. Real-time learning and adaptation for quadrotor control in Unreal Engine simulation.
 
-## Quickstart Guide
+## Features
 
-### Prerequisites
+- **Online Training**: Real-time weight updates during flight
+- **Safety Mechanisms**: Multiple safety checks and emergency stop
+- **Adaptive Learning**: Learning rate decay and error-based training control
+- **ROS2 Integration**: Full integration with QuadSim topics and services
+- **Diagnostics**: Real-time performance monitoring and status reporting
 
-- Python 3.11 or higher
-- All dependencies listed in `requirements.txt`
+## Installation
 
-### Installation
-
-1. Clone the repository:
+1. Clone into your ROS2 workspace:
    ```bash
-   git clone https://github.com/cristian1928/Online-Adaptive-Deep-Residual-Neural-Network.git
-   cd Online-Adaptive-Deep-Residual-Neural-Network
+   cd ~/ros2_ws/src
+   git clone <this_repo> adaptive_resnet_controller
    ```
 
-2. Create and activate a virtual environment:
+2. Install Python dependencies:
    ```bash
-   # Create the environment
-   python3 -m venv venv
-
-   # Activate on macOS/Linux
-   source venv/bin/activate
+   cd adaptive_resnet_controller
+   pip install -r requirements.txt
    ```
 
-3. Install the required dependencies:
+3. Build the ROS2 package:
    ```bash
-   pip install -r requirements.txt -r requirements-dev.txt
+   cd ~/ros2_ws
+   colcon build --packages-select adaptive_resnet_controller
+   source install/setup.bash
    ```
 
-### Running the Simulation
+## Usage
 
-Execute the main simulation script:
-
+### Basic Launch
 ```bash
-python3 main.py
+ros2 launch adaptive_resnet_controller adaptive_controller.launch.py
 ```
 
-This script will:
-
-- Load configuration files from the `configurations/` directory
-- Instantiate agents using the specified parameters
-- Run the simulation with online adaptive learning
-- Save output data to the `simulation_data/` directory
-- Generate plots for result analysis following IEEE formatting guidelines
-
-### Visualizing Results
-
-After the simulation, run the plotting script to generate and display all result plots:
-
+### Launch with Training Enabled
 ```bash
-python3 src/visualization/plotter.py
+ros2 launch adaptive_resnet_controller adaptive_controller.launch.py enable_training:=true
 ```
 
-## Overview
-
-### Purpose
-
-This framework applies online adaptive control via deep residual neural networks for nonlinear dynamical systems. It supports real-time target tracking with continuous adaptation of network weights based on tracking error.
-
-### Architecture
-
-- **Neural Network Core**: Deep residual architecture with online weight updates
-- **Dynamical Systems**: Includes pre-built models for spacecraft attitude control, chaotic systems, and ecological dynamics
-- **Simulation Engine**: Real-time numerical integration and state evolution
-- **Data Management**: Buffered CSV logging for efficient storage
-- **Visualization**: IEEE-style plotting and performance metrics
-
-### Supported Systems
-
-- **Attitude MRP**: Spacecraft control using Modified Rodrigues Parameters
-- **Chua Circuit**: Chaotic dynamics modeled by a double-scroll circuit
-- **Trophic Dynamics**: A three-tier ecological food chain
-- **Custom Systems**: User-defined models supported via modular interface
-
-### Configuration
-
-Simulations are configured using JSON files located in the `configurations/` directory. Each file defines the parameters for one agent, including network architecture and learning settings. Multiple configuration files enable batch simulations.
-
-## Code Quality and Testing
-
-To maintain code integrity, the following checks are recommended before committing changes:
-
-### Static Type Checking
-
-Run this after modifying type hints or function signatures:
-
+### Enable/Disable Training at Runtime
 ```bash
-mypy --strict
+ros2 service call /resnet/enable_training std_srvs/srv/SetBool "{data: true}"
 ```
 
-### Unit and Integration Tests
-
-Run the complete test suite:
-
+### Reset Neural Network Weights
 ```bash
-python -m pytest -v tests/
+ros2 service call /resnet/reset_weights std_srvs/srv/Trigger
 ```
 
-## License
+## Architecture
 
-This project is licensed under the GNU Affero General Public License v3.0. See the [LICENSE](LICENSE) file for more information.
+### Neural Network
+- Deep Residual Network (ResNet) with configurable blocks and layers
+- Input: Position (3), Velocity (3), Reference Velocity (3), Error (3), Orientation (3)
+- Output: Velocity corrections [Δvx, Δvy, Δvz]
+- Online least-squares weight updates
 
-## Citation
+### ROS2 Topics
 
-If you use this work in your research, please cite:
+**Subscriptions:**
+- `/quadsim/odom` (nav_msgs/Odometry): Current drone state
+- `/quadsim/imu` (sensor_msgs/Imu): IMU data
+- `/ref/vel_local` (geometry_msgs/TwistStamped): Reference velocity
+- `/baseline/cmd_vel` (geometry_msgs/TwistStamped): Optional baseline commands
+
+**Publications:**
+- `/resnet/cmd_vel_residual` (geometry_msgs/TwistStamped): Velocity corrections
+- `/resnet/diagnostics` (std_msgs/Float32MultiArray): Performance metrics
+- `/resnet/status` (std_msgs/String): Controller status
+
+### ROS2 Services
+- `/resnet/enable_training` (std_srvs/SetBool): Enable/disable online training
+- `/resnet/reset_weights` (std_srvs/Trigger): Reset neural network weights
+
+## Configuration
+
+Key parameters in `config/adaptive_controller_params.yaml`:
+
+- `resnet.num_blocks`: Number of residual blocks (default: 2)
+- `resnet.num_neurons`: Neurons per layer (default: 20)
+- `learning.initial_rate`: Initial learning rate (default: 0.001)
+- `control.max_velocity_correction`: Maximum velocity correction (default: 0.5 m/s)
+- `safety.emergency_stop_error`: Emergency stop threshold (default: 5.0 m/s)
+
+## Integration with QuadSim
+
+The controller integrates seamlessly with your Unreal QuadSim setup:
+
+1. **C++ Side (AROS2Controller)**: Publishes odometry and subscribes to ResNet corrections
+2. **Python Side (This Package)**: Computes adaptive corrections based on tracking error
+3. **Control Flow**:
+   - QuadSim → Odometry → ResNet → Corrections → QuadSim
+
+## Safety Features
+
+- **Warmup Period**: No training for first 100 steps
+- **Error Thresholds**: Training disabled if error too small or too large
+- **Output Limiting**: Maximum correction magnitude enforced
+- **Emergency Stop**: Controller disables if error exceeds safety threshold
+- **Thread Safety**: Proper locking for multi-threaded execution
+
+## Monitor Status
+
+```bash
+ros2 topic echo /resnet/status
+ros2 topic echo /resnet/diagnostics
+```
+
+## Troubleshooting
+
+1. **No odometry data**: Check if QuadSim is running and publishing to `/quadsim/odom`
+2. **Training not converging**: Adjust learning rate or network architecture
+3. **Emergency stops**: Reduce `max_error_threshold` or check reference commands
+4. **High CPU usage**: Reduce `control.rate_hz` or use fewer neurons
+
+## Based On
+
+This implementation is based on the paper:
 
 ```
 @article{Nino.Patil.ea2025,
@@ -119,13 +134,3 @@ If you use this work in your research, please cite:
   doi     = {10.1109/LCSYS.2025.3576652}
 }
 ```
-
-## Contact
-
-For questions or technical support, contact:
-
-- **Cristian Nino**
-- **Email:** cristian1928@ufl.edu
-- **GitHub:** [@cristian1928](https://github.com/cristian1928)
-
-For detailed documentation, see [HELP.md](HELP.md).
